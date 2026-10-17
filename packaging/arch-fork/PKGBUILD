@@ -1,0 +1,64 @@
+# Build Talis from this checkout (Wayland layer-shell only, e.g. for niri).
+# Same layout as the official talis-bin package, but compiled locally.
+#
+# Usage:
+#   cd packaging/arch-fork
+#   makepkg -f                              # layer: background (default)
+#   TALIS_LAYER=bottom makepkg -f           # original layer
+#   sudo pacman -U talis-fork-*.pkg.tar.zst
+#
+# TALIS_LAYER is read at compile time by src/desktop/wayland.rs.
+# Not supported by this package: X11 and the GNOME companion.
+pkgname=talis-fork
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Talis desktop turntable, personal fork (Wayland layer-shell build)'
+arch=('x86_64')
+url='https://github.com/Lummotm/talis-background-layer'
+license=('GPL-3.0-only' 'CC-BY-4.0' 'MIT' 'LicenseRef-Talis-Artwork')
+depends=('bash' 'glibc>=2.39' 'gcc-libs' 'gtk4>=4.8' 'gtk4-layer-shell'
+  'librsvg' 'libglvnd' 'curl' 'ca-certificates' 'hicolor-icon-theme')
+makedepends=('cargo' 'pkgconf')
+provides=("talis=$pkgver")
+conflicts=('talis' 'talis-bin')
+options=('!debug' '!strip')
+
+_repo=$(cd -- "$startdir/../.." && pwd)
+
+build() {
+  cd "$_repo"
+  export TALIS_LAYER=${TALIS_LAYER:-background}
+  [[ $TALIS_LAYER != bottom ]] || unset TALIS_LAYER
+  bash scripts/build.sh wayland
+}
+
+package() {
+  cd "$_repo"
+
+  install -d "$pkgdir/usr/bin" "$pkgdir/usr/lib/talis" \
+    "$pkgdir/usr/share/talis" "$pkgdir/usr/share/doc/talis" \
+    "$pkgdir/usr/share/licenses/$pkgname" \
+    "$pkgdir/usr/share/applications" "$pkgdir/usr/share/metainfo" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/status"
+
+  # launch.sh uses talis-wayland-bin on Wayland and preloads layer-shell.
+  install -m755 target/release/talis "$pkgdir/usr/lib/talis/talis-wayland-bin"
+  install -m755 scripts/launch.sh "$pkgdir/usr/lib/talis/launch.sh"
+  install -m644 scripts/session.sh "$pkgdir/usr/lib/talis/session.sh"
+  ln -s ../lib/talis/launch.sh "$pkgdir/usr/bin/talis"
+
+  cp -r assets "$pkgdir/usr/share/talis/assets"
+
+  install -m644 packaging/io.github.azizstark.Talis.desktop \
+    "$pkgdir/usr/share/applications/"
+  install -m644 packaging/io.github.azizstark.Talis.metainfo.xml \
+    "$pkgdir/usr/share/metainfo/"
+  install -m644 assets/ui/branding/io.github.azizstark.Talis.svg \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/"
+  install -m644 assets/ui/branding/io.github.azizstark.TalisTray-symbolic.svg \
+    "$pkgdir/usr/share/icons/hicolor/scalable/status/"
+
+  install -m644 LICENSE LICENSING.md "$pkgdir/usr/share/doc/talis/"
+  install -m644 LICENSE LICENSING.md "$pkgdir/usr/share/licenses/$pkgname/"
+}
