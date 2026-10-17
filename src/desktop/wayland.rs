@@ -3,6 +3,14 @@ use anyhow::{Context, Result, ensure};
 use gtk::{gdk, prelude::*};
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 
+/// Layer chosen at compile time with TALIS_LAYER=background (default: bottom).
+fn configured_layer() -> Layer {
+    match option_env!("TALIS_LAYER") {
+        Some("background") => Layer::Background,
+        _ => Layer::Bottom,
+    }
+}
+
 fn scene_namespace(desktops: &str) -> &'static str {
     // KWin maps the exact "desktop" scope to its desktop window type. A
     // generic bottom-layer scope is a normal window and Show Desktop hides it.
@@ -58,7 +66,7 @@ impl DesktopPlacement {
         let namespace = scene_namespace(&std::env::var("XDG_CURRENT_DESKTOP").unwrap_or_default());
         window.set_namespace(Some(namespace));
         tracing::info!(namespace, "Configuring experimental Wayland scene role");
-        window.set_layer(Layer::Bottom);
+        window.set_layer(configured_layer());
         window.set_monitor(Some(&self.monitor));
         window.set_exclusive_zone(-1);
         window.set_keyboard_mode(KeyboardMode::None);
