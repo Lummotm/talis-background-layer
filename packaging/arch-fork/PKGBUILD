@@ -49,6 +49,9 @@ package() {
   ln -s ../lib/talis/launch.sh "$pkgdir/usr/bin/talis"
 
   cp -r assets "$pkgdir/usr/share/talis/assets"
+  # Keep only the 1080p scenes (see src/resources.rs); 4k and 1440p are ~440 MB.
+  find "$pkgdir/usr/share/talis/assets/scenes" -mindepth 1 -maxdepth 1 -type d \
+    ! -name 1080p -exec rm -rf {} +
 
   install -m644 packaging/io.github.azizstark.Talis.desktop \
     "$pkgdir/usr/share/applications/"
