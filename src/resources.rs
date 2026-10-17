@@ -2,9 +2,10 @@
 use anyhow::{Context, Result, ensure};
 use std::path::{Path, PathBuf};
 
+// Only the 1080p scene is required; packages may ship just that resolution.
 fn contains_assets(directory: &Path) -> bool {
     directory
-        .join("assets/scenes/1440p/day/beauty.png")
+        .join("assets/scenes/1080p/day/beauty.png")
         .is_file()
 }
 
@@ -55,7 +56,7 @@ mod tests {
     use super::*;
 
     fn data(root: &Path) {
-        let beauty = root.join("assets/scenes/1440p/day/beauty.png");
+        let beauty = root.join("assets/scenes/1080p/day/beauty.png");
         std::fs::create_dir_all(beauty.parent().unwrap()).unwrap();
         std::fs::write(beauty, []).unwrap();
     }
